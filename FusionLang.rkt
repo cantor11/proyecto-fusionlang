@@ -7,55 +7,62 @@
 ; LINK GITHUB >>> https://github.com/cantor11/proyecto-fusionlang
 ;************************************************************
 
-;***********************************************************************************************************************
+;========================== Especificacion Lexica y Sintactica ==========================
+; La definición BNF para las expresiones del lenguaje:
+;
+;   <program>       ::= <expression>
+;                       <a-program (exp)>
 
-;; La definición BNF para las expresiones del lenguaje:
-;;
-;;  <program>       ::= <expression>
-;;                      <a-program (exp)>
-;;  <expression>    ::= <number>
-;;                      <lit-exp (datum)>
-;;                  ::= <identifier>
-;;                      <var-exp (id)>
-;;                  ::= <primitive> ({<expression>}*(,))
-;;                      <primapp-exp (prim rands)>
-;;                  ::= if <expresion> then <expresion> else <expression>
-;;                      <if-exp (exp1 exp2 exp23)>
-;;                  ::= let {identifier = <expression>}* in <expression>
-;;                      <let-exp (ids rands body)>
-;;                  ::= proc({<type-exp> <identificador>}*(,)) <expression>
-;;                      <proc-exp (arg-texps ids body)>
-;;                  ::= (<expression> {<expression>}*)
-;;                      <app-exp proc rands>
-;;                  ::= letrec  {<type-exp> identifier ({<type-exp> identifier}*(,)) = <expression>}* in <expression>
-;;                     <letrec-exp result-texps proc-names arg-texpss idss bodies bodyletrec>
-;;  <primitive>     ::= + | - | * | add1 | sub1 
+;   <expression>    ::= <number>
+;                       <numero-lit (num)>
 
-;***********************************************************************************************************************
-;***********************************************************************************************************************
+;                   ::= "\""<texto> "\""
+;                       texto-lit (txt)
+
+; 		    ::= <false>
+;                       false-exp (false)
+; 
+;  		    ::= <true>
+;                       true-exp (true)
+
+;                   ::= <identificador>
+;                       var-exp (id)
 
 
-;***********************************************************************************************************************
+
 ;**********************************************    Especificación Léxica   *********************************************
-;***********************************************************************************************************************
 
 (define scanner-spec-simple-interpreter
 '((white-sp
    (whitespace) skip)
   (comment
    ("%" (arbno (not #\newline))) skip)
-  (identifier
+  (identificador
    (letter (arbno (or letter digit "?"))) symbol)
-  (number
+  (numero
    (digit (arbno digit)) number)
-  (number
-   ("-" digit (arbno digit)) number)))
+  (numero
+   ("-" digit (arbno digit)) number)
+  (numero
+   (digit (arbno digit) "." digit (arbno digit)) number)
+  (numero
+   ("-" digit (arbno digit) "." digit (arbno digit)) number)
+  (texto
+   (letter) string)
+  (texto
+   (letter (arbno (or letter digit "-" ":"))) string)
+))
+
 
 ;Especificación Sintáctica (gramática)
 
 (define grammar-simple-interpreter
   '((program (expression) a-program)
-    (expression (number) lit-exp)
+    
+    (expresion (numero) numero-lit)
+
+    (expresion (texto) caracter-lit)
+    
     (expression (identifier) var-exp)
     (expression
      (primitive "(" (separated-list expression ",")")")
