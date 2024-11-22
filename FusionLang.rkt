@@ -56,14 +56,58 @@
 
 ;Especificación Sintáctica (gramática)
 
-(define grammar-simple-interpreter
-  '((program (expression) a-program)
-    
-    (expresion (numero) numero-lit)
+(define grammar-fusion-lang
+  '((program (GLOBALS PROGRAM) a-program)
 
-    (expresion (texto) caracter-lit)
+;========================= DATOS =========================
     
-    (expression (identifier) var-exp)
+    (expression (numero) numero-lit)
+
+    (expression (texto) caracter-lit)
+    
+;========================= IDENTIFICADORES =========================
+    
+    (expression (identificador) var-exp)
+
+;========================= BLOQUE GLOBALS =========================
+
+    (GLOBALS ("GLOBALS" "{" decls-global "}") globals-block)
+
+    (decls-global (decl-global) singl-decl-global)
+    (decls-global (decl-global ";" decls-global) mult-decls-global)
+
+    (decl-global (var-declaration) global-var)
+    (decl-global (const-declaration) global-const)
+    (decl-global (function-declaration) global-function)
+
+;========================= DECLARACIONES GLOBALES =========================
+    
+    (var-declaration (type identificador "=" value ";") var-declaration)
+    (const-declaration ("const" type identificador "=" value) const-declaration)
+    (function-declaration ("proc" identificador "=" "function" "(" param-list ")" "{" statements "}") function-declaration)
+
+;========================= BLOQUE PROGRAM =========================
+    (PROGRAM ("proc" "main" "(" ")" "{" statements "}") program-main)
+    (statements (statement) single-statement)
+    (statements (statement ";" statements) multiple-statements)
+    
+    (statement (expression) statement-expression)
+    (statement ("return" expression) return-statement)
+
+;========================= TIPOS =========================
+    (type ("int") int-type)
+    (type ("float") float-type)
+    (type ("string") string-type)
+    (type ("bool") bool-type)
+    (type ("list" "<" type ">") list-type)
+    (type ("vector" "<" type ">") vector-type)
+    (type ("dict" "<" type "," type ">") dict-type)
+    
+
+
+
+    
+    
     (expression
      (primitive "(" (separated-list expression ",")")")
      primapp-exp)
