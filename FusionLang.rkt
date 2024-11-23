@@ -9,25 +9,56 @@
 
 ;========================== Especificacion Lexica y Sintactica ==========================
 ; La definición BNF para las expresiones del lenguaje:
-;
-;   <program>       ::= <expression>
-;                       <a-program (exp)>
+;<programa> ::= GLOBALS { <decls-global> } PROGRAM { proc main () { return <expresion>; } }
 
-;   <expression>    ::= <number>
-;                       <numero-lit (num)>
+;<decls-global> ::= { <decl-global> ";" }*
 
-;                   ::= "\""<texto> "\""
-;                       texto-lit (txt)
+;<decl-global> ::= <var-declaration>
+;               | <const-declaration>
+;               | <function-declaration>
 
-; 		    ::= <false>
-;                       false-exp (false)
-; 
-;  		    ::= <true>
-;                       true-exp (true)
+;<var-declaration> ::= <type-exp> <identificador> "=" <expresion> ";"
+;<var-declaration> ::= { <type-exp> <identificador> "=" <expresion> ";" }*
 
-;                   ::= <identificador>
-;                       var-exp (id)
+;<const-declaration> ::= "const" <type-exp> <identificador> "=" <expresion> ";"
+;<const-declaration> ::= { "const" <type-exp> <identificador> "=" <expresion> ";" }*
 
+;<function-declaration> ::= <type-exp> <identificador> "=" "function" "(" <param-list> ")" "{" <expresion> "}"
+
+;<param-list> ::= <identificador> { "," <identificador> }*
+
+;<expresion> ::= <numero>
+;             | "\"" <texto> "\""
+;             | <identificador>
+;             | "False"
+;             | "True"
+;             | "(" <expresion> { "," <expresion> } ")"
+;             | "[" <expresion> { "," <expresion> } "]"
+;             | "{" <expresion-pareada> { "," <expresion-pareada> } "}"
+
+;<expresion-pareada> ::= "\"" <texto> "\"" ":" <expresion>
+
+;<type-exp> ::= "int"
+;            | "float"
+;            | "string"
+;            | "bool"
+;            | "list" "<" <type-exp> ">"
+;            | "vector" "<" <type-exp> ">"
+;            | "dict" "<" <type-exp> "," <type-exp> ">"
+;            | "proc"
+
+;<primitiva-aritmetica> ::= "+" | "-" | "/" | "*"
+;<primitiva-logica> ::= ">" | "<" | ">=" | "<=" | "!=" | "=="
+;<primitiva-asignacion> ::= "->"
+
+;<primitiva-lista> ::= "empty?" | "empty" | "make-list" | "list?" | "head" | "tail" | "append"
+
+;<primitiva-vector> ::= "vector?" | "make-vector" | "ref-vector" | "set-vector" | "append-vector" | "delete-val-vector"
+
+;<primitiva-diccionario> ::= "dict?" | "make-dict" | "ref-dict" | "set-dict" | "append-dict" | "keys-dict" | "values-dict"
+
+;<primitiva-cadena> ::= "longitud"
+;<primitiva-binaria> ::= "concat"
 
 
 ;**********************************************    Especificación Léxica   *********************************************
@@ -53,95 +84,95 @@
    (letter (arbno (or letter digit "-" ":"))) string)
 ))
 
-
 ;Especificación Sintáctica (gramática)
 
 (define grammar-fusion-lang
   '((program (GLOBALS PROGRAM) a-program)
-
-;========================= DATOS =========================
     
-    (expression (numero) numero-lit)
-
-    (expression (texto) caracter-lit)
-    
-;========================= IDENTIFICADORES =========================
-    
-    (expression (identificador) var-exp)
-
 ;========================= BLOQUE GLOBALS =========================
-
-    (GLOBALS ("GLOBALS" "{" decls-global "}") globals-block)
-
-    (decls-global (decl-global) singl-decl-global)
-    (decls-global (decl-global ";" decls-global) mult-decls-global)
-
+    (GLOBALS ("GLOBALS" "{"(decls-global)"}")
+             globals-block)
+    
+    (decls-global (arbno decl-global ";") mult-decls-global)
+    
     (decl-global (var-declaration) global-var)
     (decl-global (const-declaration) global-const)
     (decl-global (function-declaration) global-function)
-
 ;========================= DECLARACIONES GLOBALES =========================
-    
-    (var-declaration (type identificador "=" value ";") var-declaration)
-    (const-declaration ("const" type identificador "=" value) const-declaration)
-    (function-declaration ("proc" identificador "=" "function" "(" param-list ")" "{" statements "}") function-declaration)
-
+    (var-declaration (arbno type-exp identificador "=" expression ";") var-declaration)
+    (const-declaration (arbno "const" type-exp identificador "=" expression) const-declaration)
+    (function-declaration (arbno type-exp identificador "=" "function" "(" param-list ")" "{" expression "}") function-declaration)
 ;========================= BLOQUE PROGRAM =========================
-    (PROGRAM ("proc" "main" "(" ")" "{" statements "}") program-main)
-    (statements (statement) single-statement)
-    (statements (statement ";" statements) multiple-statements)
-    
-    (statement (expression) statement-expression)
-    (statement ("return" expression) return-statement)
-
-;========================= TIPOS =========================
-    (type ("int") int-type)
-    (type ("float") float-type)
-    (type ("string") string-type)
-    (type ("bool") bool-type)
-    (type ("list" "<" type ">") list-type)
-    (type ("vector" "<" type ">") vector-type)
-    (type ("dict" "<" type "," type ">") dict-type)
-    
-
-
-
-    
-    
-    (expression
-     (primitive "(" (separated-list expression ",")")")
-     primapp-exp)
-    (expression ("if" expression "then" expression "else" expression)
-                if-exp)
-    (expression ("let" (arbno identifier "=" expression) "in" expression)
-                let-exp)
-    (expression ( "(" expression (arbno expression) ")")
-                app-exp)
-    
-    ; características adicionales
-    (expression ("false") false-exp)
-    (expression ("true") true-exp)
-    (expression ("proc" "(" (separated-list type-exp identifier ",") ")" expression)
-                proc-exp)
-    (expression ("letrec" (arbno type-exp identifier
-                                 "(" (separated-list type-exp identifier ",") ")"
-                                 "=" expression) "in" expression)
-                letrec-exp)
-    ;;;;;;
-
-    (primitive ("+") add-prim)
-    (primitive ("-") substract-prim)
-    (primitive ("*") mult-prim)
-    (primitive ("add1") incr-prim)
-    (primitive ("sub1") decr-prim)
-    
-    ; características adicionales
-    (primitive ("zero?") zero-test-prim)    
-    (type-exp ("int") int-type-exp)
-    (type-exp ("bool") bool-type-exp)
-    (type-exp ("(" (separated-list type-exp "*") "->" type-exp ")")
-              proc-type-exp)
-    ;;;;;;;;
+    (PROGRAM ("PROGRAM" "{" "proc" "main" "(" ")" "{" "return" expression ";" "}" "}")
+             program-block)
+;========================= DATOS =========================
+    (expression (numero)
+                numero-lit)
+    (expression ("\"" texto "\"")
+               cadena-lit)
+    (expression (identificador)
+                var-exp)
+    (expression ("False")
+                false-exp)
+    (expression ("True")
+                true-exp)
+    (expression ("("(separated-list expresion ",") ")")
+               list-exp)
+    (expression ("["(separated-list expresion ",") "]")
+               vector-exp)
+    (expression ("{" (separated-list "\"" text "\"" ":" expression ",") "}")
+                dic-exp)
+;========================= TIPOS DE DATOS PRIMITIVOS =========================
+    (type-exp ("int") int-type)
+    (type-exp ("float") float-type)
+    (type-exp ("string") string-type)
+    (type-exp ("bool") bool-type)
+;========================= TIPO DE DATOS COMPUESTOS =========================
+    (type-exp ("list" "<" type-exp ">") list-type)
+    (type-exp ("vector" "<" type-exp ">") vector-type)
+    (type-exp ("dict" "<" type-exp "," type-exp ">") dict-type)
+    (type-exp ("proc") proc-type)
+;========================= PRIMITIVAS ARITMETICAS =========================
+    (primitiva-arit ("+") primitiva-suma)
+    (primitiva-arit ("-") primitiva-resta)
+    (primitiva-arit ("/") primitiva-div)
+    (primitiva-arit ("*") primitiva-multi)
+;========================= PRIMITIVAS LOGICAS =========================
+    (primitiva-log (">") primitiva-mayor)
+    (primitiva-log ("<") primitiva-menor)
+    (primitiva-log (">=") primitiva-mayor-igual)
+    (primitiva-log ("<=") primitiva-menor-igual)
+    (primitiva-log ("!=") primitiva-diferente)
+    (primitiva-log ("==") primitiva-comparador-igual)
+;========================= PRIMITIVAS ASIGNACION =========================
+    (primitiva-asig ("->") primitiva-asignar)
+;========================= PRIMITIVAS LISTAS =========================
+    (primitiva-lista ("empty?") primitiva-es-vacio)
+    (primitiva-lista ("empty") primitiva-vacio)
+    (primitiva-lista ("make-list") primitiva-crear-lista)
+    (primitiva-lista ("list?") primitiva-es-lista)
+    (primitiva-lista ("head") primitiva-cabeza)
+    (primitiva-lista ("tail") primitiva-cola)
+    (primitiva-lista ("append") primitiva-append)
+;========================= PRIMITIVAS VECTORES =========================
+    (primitiva-vector ("vector?") primitiva-es-vector)
+    (primitiva-vector ("make-vector") primitiva-crear-vector)
+    (primitiva-vector ("ref-vector") primitiva-obtener-valor-vector)
+    (primitiva-vector ("set-vector") primitiva-cambiar-valor-vector)
+    (primitiva-vector ("append-vector") primitiva-append-vector)
+    (primitiva-vector ("vector?") primitiva-es-vector)
+    (primitiva-vector ("delete-val-vector") primitiva-elimina-valor-vector)
+;========================= PRIMITIVAS DICCIONARIOS =========================
+    (primitiva-dict ("dict?") primitiva-es-dict)
+    (primitiva-dict ("make-dict") primitiva-crear-dict)
+    (primitiva-dict ("ref-dict") primitiva-obtener-dict)
+    (primitiva-dict ("set-dict") primitiva-cambiar-valor-dict)
+    (primitiva-dict ("append-dict") primitiva-append-dict)
+    (primitiva-dict ("keys-dict") primitiva-lista-clave-dict)
+    (primitiva-dict ("values-dict") primitiva-lista-valor-dict)
+;========================= PRIMITIVAS CADENAS ========================= 
+    (primitiva-unaria ("longitud") primitiva-longitud)
+    (primitiva-binaria ("concat") primitiva-concat)
     ))
 
 ;***********************************************************************************************************************
