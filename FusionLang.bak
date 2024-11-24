@@ -619,7 +619,6 @@
       [(eq? prim 'primitiva-append) (append (car args) (cadr args))]  ; Une dos listas
       [else (eopl:error "Operación no válida para el primitivo" prim)])))  ; Error si el primitivo no es reconocido
 
-(require racket/list)
 (define (subvector vec start end)
   (vector->list (make-vector (- end start)))
   (vector->list (drop (vector->list vec) start) end))
